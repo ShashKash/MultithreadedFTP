@@ -7,21 +7,25 @@ import PIL.Image as Image
 
 NUM_THREADS = 8
 def merge_img():
-    global recieved_file_pieces
+    global received
+    n = 0
     while True:
-        if len(recieved_file_pieces)==NUM_THREADS:
+        if len(received.file_pieces)==NUM_THREADS:
+            n += 1
             final_file = b''
-            keys = list(recieved_file_pieces.keys())
-            keys.sort()
-            for key in keys:
-                v = recieved_file_pieces[key]
+            for key in sorted(received.file_pieces.keys()):
+                v = received.file_pieces[key]
                 print(f"key = {key} data = {len(v)}")
                 final_file += v
             print(len(final_file))
-            image = Image.open(io.BytesIO(final_file))
-            image.save('recieved.jpg')
-            
-            recieved_file_pieces = {}
+
+            if received.file_type==0:
+                image = Image.open(io.BytesIO(final_file))
+                image.save(f'received_{n}.jpg')
+            else:
+                with open(f'received_{n}.mp4', 'wb') as video:
+                    video.write(final_file)
+            received.file_pieces = {}
 
 class ClientThread(threading.Thread):
     def __init__(self,clientAddress,clientsocket):
@@ -35,10 +39,13 @@ class ClientThread(threading.Thread):
         
         bdata_id = self.csocket.recv(16)
         data_id = int.from_bytes(bdata_id, 'big')
-        
+
+        bfile_type = self.csocket.recv(16)
+        file_type = int.from_bytes(bfile_type, 'big')
+
         chunk_size = self.csocket.recv(16)
-        print(chunk_size)
         length = int.from_bytes(chunk_size, 'big')
+        print(chunk_size)
         print(f"Chunk of size {length} bytes to be recieved")
         
         data = b''
@@ -50,8 +57,8 @@ class ClientThread(threading.Thread):
 
         # send our "done" ack
         print(f"Chunk number {data_id} of size {len(data)} bytes recieved")
-        recieved_file_pieces[data_id] = data
-        print(len(recieved_file_pieces))
+        received.file_pieces[data_id] = data
+        received.file_type = file_type
 
         msg = "transmission done"
         self.csocket.send(msg.encode('utf-8'))
@@ -67,8 +74,11 @@ server.bind((LOCALHOST, PORT))
 print("Server started")
 print("Waiting for client request..")
 
-recieved_file_pieces = {}
-
+class Received:
+    def __init__(self):
+        self.file_pieces = {}
+        self.file_type = None
+received = Received()
 t1 = threading.Thread(target=merge_img, args=[])
 t1.start()
 
