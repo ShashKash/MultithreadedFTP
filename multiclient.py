@@ -33,7 +33,7 @@ class ServerThread(threading.Thread):
                 break
         self.client.close()
 
-file_to_send = 'image_name.JPG'
+file_to_send = 'big.jpg'
 with open(file_to_send, "rb") as image:
   f = image.read()
 
@@ -41,7 +41,7 @@ total_data = bytearray(f)
 total_file_size = len(total_data)
 print(f"Total filesize is {total_file_size}")
 
-NUM_THREADS = 4
+NUM_THREADS = 8
 THREADS = []
 
 start = time.time()

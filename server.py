@@ -5,19 +5,19 @@ import io
 import time
 import PIL.Image as Image
 
-NUM_THREADS = 4
-
 def merge_img(file_pieces):
     while True:
         time.sleep(5)
         final_file = b''
-        # print(file_pieces.keys())
-        for k, v in file_pieces.items():
-            print(f"key = {k} data = {len(v)}")
+        keys = list(file_pieces.keys())
+        keys.sort()
+        for key in keys:
+            v = file_pieces[key]
+            print(f"key = {key} data = {len(v)}")
             final_file += v
         print(len(final_file))
         image = Image.open(io.BytesIO(final_file))
-        image.save('recieved.JPG')
+        image.save('recieved.jpg')
         exit()
         # if len(file_pieces) == NUM_THREADS:
         #     final_file = b''
